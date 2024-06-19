@@ -3,42 +3,83 @@ import java.io.*;
 import java.net.Socket;
 
 public class VoiceChatClient {
-    public static void main(String[] args) throws LineUnavailableException, IOException {
-        Socket socket = new Socket("localhost", 5000);  // Connect to the server
-        System.out.println("Connected to server");
 
-        // Audio format parameters
-        AudioFormat format = new AudioFormat(16000, 16, 2, true, true);
+    public static void main(String[] args) {
+        try {
+            final Socket socket = new Socket("localhost", 5000);
+            System.out.println("Connected to server");
 
-        DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+            // Setup audio format
+            final AudioFormat format = new AudioFormat(16000, 16, 2, true, true);
+            DataLine.Info targetInfo = new DataLine.Info(TargetDataLine.class, format);
+            DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, format);
 
+            // Setup microphone line for capture
+            final TargetDataLine microphone = (TargetDataLine) AudioSystem.getLine(targetInfo);
+            microphone.open(format);
+            microphone.start();
 
-        // Open and start the microphone line
-        TargetDataLine microphone = (TargetDataLine) AudioSystem.getLine(info);
-        microphone.open(format);
-        microphone.start();
+            // Setup speakers for playback
+            final SourceDataLine speakers = (SourceDataLine) AudioSystem.getLine(sourceInfo);
+            speakers.open(format);
+            speakers.start();
 
-        // Output stream to send data to server
-        OutputStream output = socket.getOutputStream();
+            // Get the input and output streams for the socket connection
+            final OutputStream output = socket.getOutputStream();
+            final InputStream input = socket.getInputStream();
 
-        // Input stream to receive data from server
-        InputStream input = socket.getInputStream();
+            // Create a thread for capturing and sending microphone data
+            Thread captureThread = new Thread(() -> {
+                byte[] buffer = new byte[1024];
+                int numBytesRead;
+                try {
+                    while (!Thread.interrupted()) {
+                        numBytesRead = microphone.read(buffer, 0, buffer.length);
+                        output.write(buffer, 0, numBytesRead);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    microphone.close();
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
 
-        // Buffer for reading and writing data
-        byte[] buffer = new byte[1024];
-        int numBytesRead;
+            // Create a thread for receiving and playing back audio from the server
+            Thread playbackThread = new Thread(() -> {
+                byte[] buffer = new byte[1024];
+                int numBytesRead;
+                try {
+                    while (!Thread.interrupted()) {
+                        numBytesRead = input.read(buffer, 0, buffer.length);
+                        if (numBytesRead > 0) {
+                            speakers.write(buffer, 0, numBytesRead);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    speakers.close();
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
 
-try {
-    while (true) {
-        numBytesRead = microphone.read(buffer, 0, buffer.length);
-        output.write(buffer, 0, numBytesRead);
-    }
-} finally {
-    // This block will execute even if the loop exits due to an exception
-    microphone.close();
-    socket.close();
-}
+            captureThread.start();
+            playbackThread.start();
 
-
+            // Wait for the threads to finish
+            captureThread.join();
+            playbackThread.join();
+        } catch (LineUnavailableException | IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
