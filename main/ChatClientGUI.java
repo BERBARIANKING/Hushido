@@ -57,7 +57,7 @@ public class ChatClientGUI extends JFrame {
     }
 
 
-    private void displayAsciiArt() {
+  private void displayAsciiArt() {
         String asciiArt =
                 "   $$$$$\\                                                                           \n"
                         + "   \\__$$ |                                                                          \n"
@@ -77,7 +77,9 @@ public class ChatClientGUI extends JFrame {
                         + "\\$$$$$$$\\ $$ |  $$ |\\$$$$$$$ | \\$$$$  |$$ |      \\$$$$$$  |\\$$$$$$  |$$ | $$ | $$ |\n"
                         + " \\_______|\\__|  \\__| \\_______|  \\____/ \\__|       \\______/  \\______/ \\__| \\__| \\__|\n"
                         + "                                                                                    \n"
-                        + "                                                                                    \n";
+                        + "                                                                                    \n"
+                        + "                                                                 By Nikolaos Bermparis\n"
+                        + "                                                                                     \n";
         chatArea.append(asciiArt);
     }
 
