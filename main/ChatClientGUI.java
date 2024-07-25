@@ -11,7 +11,7 @@ public class ChatClientGUI extends JFrame {
 
     public ChatClientGUI() {
         createGUI();
-        connectToServer("192.168.1.200", 1234);  // This should be your server IP if not running locally
+        connectToServer("192.168.1.88", 1234);  // This should be your server IP if not running locally
         displayAsciiArt();
     }
 
@@ -57,7 +57,7 @@ public class ChatClientGUI extends JFrame {
     }
 
 
-  private void displayAsciiArt() {
+    private void displayAsciiArt() {
         String asciiArt =
                 "   $$$$$\\                                                                           \n"
                         + "   \\__$$ |                                                                          \n"
@@ -91,9 +91,13 @@ public class ChatClientGUI extends JFrame {
         }
     }
 
-    public void appendMessage(String message) {
-        SwingUtilities.invokeLater(() -> chatArea.append(message + "\n"));
-    }
+   public void appendMessage(String message) {
+    SwingUtilities.invokeLater(() -> {
+        chatArea.append(message + "\n");
+        chatArea.setCaretPosition(chatArea.getDocument().getLength());
+    });
+}
+
 
     private void connectToServer(String serverAddress, int port) {
         try {
