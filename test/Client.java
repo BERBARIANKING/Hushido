@@ -1,33 +1,64 @@
+// ChatClient.java
+import javax.net.ssl.*;
 import java.io.*;
-import java.net.*;
+import java.security.*;
 
-public class Client {
-    public static void main(String[] args) {
-        String hostname = "192.168.1.1"; // IP Address of the server
-        int port = 1234;
+public class ChatClient {
+    private SSLSocket socket;
+    private PrintWriter out;
+    private BufferedReader in;
+    private ChatClientGUI gui;
 
-        try (Socket socket = new Socket(hostname, port)) {
-            OutputStream output = socket.getOutputStream();
-            PrintWriter writer = new PrintWriter(output, true);
+    public ChatClient(String serverAddress, int port, ChatClientGUI gui) throws Exception {
+        this.gui = gui;
 
-            Console console = System.console();
-            String text;
+        // Load the client's truststore
+        KeyStore trustStore = KeyStore.getInstance("JKS");
+        trustStore.load(new FileInputStream("C:/Users/Berbari/Documents/NetBeansProjects/ChatClient/src/client.truststore"), "password".toCharArray());
 
-            do {
-                text = console.readLine("Enter text: ");
-                writer.println(text);
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
+        trustManagerFactory.init(trustStore);
 
-                InputStream input = socket.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
 
-                String response = reader.readLine();
-                System.out.println("Server response: " + response);
-            } while (!text.equals("bye"));
+        SSLSocketFactory socketFactory = sslContext.getSocketFactory();
+        socket = (SSLSocket) socketFactory.createSocket(serverAddress, port);
+        out = new PrintWriter(socket.getOutputStream(), true);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        System.out.println("Connected to server: " + socket);
 
-        } catch (UnknownHostException ex) {
-            System.out.println("Server not found: " + ex.getMessage());
+        listenForMessages();
+    }
+
+    private void listenForMessages() {
+        new Thread(() -> {
+            try {
+                String incomingMessage;
+                while ((incomingMessage = in.readLine()) != null) {
+                    gui.appendMessage(incomingMessage);
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                gui.appendMessage("Connection lost.");
+            }
+        }).start();
+    }
+
+    public void sendMessage(String msg) {
+        out.println(msg);
+        gui.appendMessage("You: " + msg);  // Display your own messages in the chat area
+        System.out.println("Sent message: " + msg);
+    }
+
+    public void close() {
+        try {
+            if (socket != null) socket.close();
+            if (out != null) out.close();
+            if (in != null) in.close();
+            System.out.println("Connection closed");
         } catch (IOException ex) {
-            System.out.println("I/O error: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 }
