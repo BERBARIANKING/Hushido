@@ -144,6 +144,9 @@ public class ChatClientGUI extends JFrame {
         setupZoomBindings();
 
         setVisible(true);
+
+        // Request focus on the input field
+        inputField.requestFocusInWindow();
     }
 
     private void setupZoomBindings() {
