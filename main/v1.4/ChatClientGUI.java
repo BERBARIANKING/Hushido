@@ -1,6 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import javax.swing.border.Border;
 
@@ -12,6 +13,7 @@ public class ChatClientGUI extends JFrame {
     private String username;
     private String password;
     private String serverAddress;
+    private int fontSize = 12; // Default font size
 
     public ChatClientGUI() {
         showMainMenu();
@@ -112,18 +114,18 @@ public class ChatClientGUI extends JFrame {
         chatArea.setEditable(false);
         chatArea.setBackground(Color.BLACK);
         chatArea.setForeground(Color.GREEN);
-        chatArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        chatArea.setFont(new Font("Monospaced", Font.PLAIN, fontSize));
         JScrollPane scrollPane = new JScrollPane(chatArea);
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         inputField = new JTextField();
-        inputField.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        inputField.setFont(new Font("Monospaced", Font.PLAIN, fontSize));
         inputField.setBackground(Color.DARK_GRAY);
         inputField.setForeground(Color.GREEN);
         inputField.setCaretColor(Color.GREEN);
 
         sendButton = new JButton("Send");
-        sendButton.setFont(new Font("Monospaced", Font.BOLD, 12));
+        sendButton.setFont(new Font("Monospaced", Font.BOLD, fontSize));
         sendButton.setBackground(Color.GRAY);
         sendButton.setForeground(Color.GREEN);
         sendButton.addActionListener(this::sendMessage);
@@ -138,7 +140,47 @@ public class ChatClientGUI extends JFrame {
         add(scrollPane, BorderLayout.CENTER);
         add(inputPanel, BorderLayout.SOUTH);
 
+        // Add key bindings for zooming
+        setupZoomBindings();
+
         setVisible(true);
+    }
+
+    private void setupZoomBindings() {
+        Action zoomInAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                adjustFontSize(2);
+            }
+        };
+
+        Action zoomOutAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                adjustFontSize(-2);
+            }
+        };
+
+        // Bind the zoom in action to Ctrl + Equals
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, KeyEvent.CTRL_DOWN_MASK), "zoomIn");
+        getRootPane().getActionMap().put("zoomIn", zoomInAction);
+
+        // Bind the zoom out action to Ctrl + Minus
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, KeyEvent.CTRL_DOWN_MASK), "zoomOut");
+        getRootPane().getActionMap().put("zoomOut", zoomOutAction);
+    }
+
+    private void adjustFontSize(int change) {
+        fontSize += change;
+        if (fontSize < 6) {
+            fontSize = 6; // Minimum font size
+        }
+        Font newFont = new Font("Monospaced", Font.PLAIN, fontSize);
+        chatArea.setFont(newFont);
+        inputField.setFont(newFont);
+        sendButton.setFont(new Font("Monospaced", Font.BOLD, fontSize));
     }
 
     private void displayAsciiArt() {
